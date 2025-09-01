@@ -267,7 +267,6 @@ export default class RichToolbar extends Component {
           horizontal={horizontal}
           style={flatStyle}
           contentContainerStyle={flatContainerStyle}
-          horizontal={horizontal}
           keyboardShouldPersistTaps={'always'}
           keyExtractor={(item, index) => item.action + '-' + index}
           data={this.state.data}
