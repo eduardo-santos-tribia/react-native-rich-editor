@@ -259,12 +259,12 @@ export default class RichToolbar extends Component {
   }
 
   render() {
-    const {style, disabled, children, flatStyle, flatContainerStyle, horizontal = true} = this.props;
+    const { style, disabled, children, flatStyle, flatContainerStyle, horizontal = true } = this.props;
     const vStyle = [styles.barContainer, style, disabled && this._getButtonDisabledStyle()];
     return (
       <View style={vStyle}>
         <FlatList
-          horizontal
+          horizontal={horizontal}
           style={flatStyle}
           contentContainerStyle={flatContainerStyle}
           horizontal={horizontal}
