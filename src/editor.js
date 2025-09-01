@@ -110,7 +110,7 @@ function createHTML(options = {}) {
 
         function exec(command) {
             var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-            return document.execCommand(command, false, false);
+            return document.execCommand(command, false, value);
         };
 
         function asyncExec(command){
