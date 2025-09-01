@@ -1,6 +1,6 @@
-import React, {Component} from 'react';
-import {FlatList, Image, StyleSheet, TouchableOpacity, View} from 'react-native';
-import {actions} from './const';
+import React, { Component } from 'react';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { actions } from './const';
 
 export const defaultActions = [
   actions.keyboard,
@@ -28,6 +28,7 @@ function getDefaultIcon() {
   texts[actions.insertLink] = require('../img/link.png');
   texts[actions.setStrikethrough] = require('../img/strikethrough.png');
   texts[actions.setUnderline] = require('../img/underline.png');
+  texts[actions.heading1] = require('../img/heading1.png');
   texts[actions.insertVideo] = require('../img/video.png');
   texts[actions.removeFormat] = require('../img/remove_format.png');
   texts[actions.undo] = require('../img/undo.png');
@@ -76,12 +77,12 @@ export default class RichToolbar extends Component {
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
-    const {actions} = nextProps;
+    const { actions } = nextProps;
     if (actions !== prevState.actions) {
-      let {items = []} = prevState;
+      let { items = [] } = prevState;
       return {
         actions,
-        data: actions.map(action => ({action, selected: items.includes(action)})),
+        data: actions.map(action => ({ action, selected: items.includes(action) })),
       };
     }
     return null;
@@ -92,7 +93,7 @@ export default class RichToolbar extends Component {
   }
 
   _mount = () => {
-    const {editor: {current: editor} = {current: this.props.getEditor?.()}} = this.props;
+    const { editor: { current: editor } = { current: this.props.getEditor?.() } } = this.props;
     if (!editor) {
       // No longer throw an error, just try to re-load it when needed.
       // This is because the webview may go away during long periods of inactivity,
@@ -110,11 +111,14 @@ export default class RichToolbar extends Component {
   };
 
   setSelectedItems(items) {
-    const {items: selectedItems} = this.state;
+    const { items: selectedItems } = this.state;
     if (this.editor && items !== selectedItems) {
       this.setState({
         items,
-        data: this.state.actions.map(action => ({action, selected: items.includes(action)})),
+        data: this.state.actions.map(action => ({
+          action,
+          selected: items.includes(action) || items.some(item => item && item.type === action),
+        })),
       });
     }
   }
@@ -132,7 +136,7 @@ export default class RichToolbar extends Component {
   }
 
   _getButtonIcon(action) {
-    const {iconMap} = this.props;
+    const { iconMap } = this.props;
     if (iconMap && iconMap[action]) {
       return iconMap[action];
     } else {
@@ -154,7 +158,7 @@ export default class RichToolbar extends Component {
   }
 
   _onPress(action) {
-    const {onPressAddImage, onInsertLink, insertVideo} = this.props;
+    const { onPressAddImage, onInsertLink, insertVideo } = this.props;
     const editor = this.editor;
 
     if (!editor) {
@@ -215,22 +219,24 @@ export default class RichToolbar extends Component {
   _defaultRenderAction(action, selected) {
     let that = this;
     const icon = that._getButtonIcon(action);
-    const {iconSize, iconGap, disabled, itemStyle} = that.props;
+    const { iconSize, iconGap, disabled, itemStyle } = that.props;
     const style = selected ? that._getButtonSelectedStyle() : that._getButtonUnselectedStyle();
     const tintColor = disabled
       ? that.props.disabledIconTint
       : selected
-      ? that.props.selectedIconTint
-      : that.props.iconTint;
+        ? that.props.selectedIconTint
+        : that.props.iconTint;
     return (
       <TouchableOpacity
         key={action}
         disabled={disabled}
-        style={[{width: iconGap + iconSize}, styles.item, itemStyle, style]}
+        style={[{ width: iconGap + iconSize }, styles.item, itemStyle, style]}
+        testID={'button_action'}
+        accessible={true}
         onPress={() => that._onPress(action)}>
         {icon ? (
           typeof icon === 'function' ? (
-            icon({selected, disabled, tintColor, iconSize, iconGap})
+            icon({ selected, disabled, tintColor, iconSize, iconGap })
           ) : (
             <Image
               source={icon}
@@ -253,7 +259,7 @@ export default class RichToolbar extends Component {
   }
 
   render() {
-    const {style, disabled, children, flatStyle, flatContainerStyle} = this.props;
+    const {style, disabled, children, flatStyle, flatContainerStyle, horizontal = true} = this.props;
     const vStyle = [styles.barContainer, style, disabled && this._getButtonDisabledStyle()];
     return (
       <View style={vStyle}>
@@ -261,12 +267,13 @@ export default class RichToolbar extends Component {
           horizontal
           style={flatStyle}
           contentContainerStyle={flatContainerStyle}
+          horizontal={horizontal}
           keyboardShouldPersistTaps={'always'}
           keyExtractor={(item, index) => item.action + '-' + index}
           data={this.state.data}
           alwaysBounceHorizontal={false}
           showsHorizontalScrollIndicator={false}
-          renderItem={({item}) => this._renderAction(item.action, item.selected)}
+          renderItem={({ item }) => this._renderAction(item.action, item.selected)}
         />
         {children}
       </View>

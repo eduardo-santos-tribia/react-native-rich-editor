@@ -35,12 +35,15 @@ function createHTML(options = {}) {
     autoCapitalize = 'off',
     enterKeyHint = '',
     initialFocus = false,
+    spellcheck = true,
     autoCorrect = false,
     defaultParagraphSeparator = 'div',
     // When first gaining focus, the cursor moves to the end of the text
     firstFocusEnd = true,
     useContainer = true,
     styleWithCSS = false,
+    useCharacter = true,
+    defaultHttps = true,
   } = options;
   //ERROR: HTML height not 100%;
   return `
@@ -55,8 +58,8 @@ function createHTML(options = {}) {
         html, body { margin: 0; padding: 0;font-family: Arial, Helvetica, sans-serif; font-size:1em; height: 100%}
         body { overflow-y: hidden; -webkit-overflow-scrolling: touch;background-color: ${backgroundColor};caret-color: ${caretColor};}
         .content {font-family: Arial, Helvetica, sans-serif;color: ${color}; width: 100%;${
-    !useContainer ? 'height:100%;' : ''
-  }-webkit-overflow-scrolling: touch;padding-left: 0;padding-right: 0;}
+          !useContainer ? 'height:100%;' : ''
+        }-webkit-overflow-scrolling: touch;padding-left: 0;padding-right: 0;}
         .pell { height: 100%;} .pell-content { outline: 0; overflow-y: auto;padding: 10px;height: 100%;${contentCSSText}}
     </style>
     <style>
@@ -243,10 +246,7 @@ function createHTML(options = {}) {
                     var br = createElement('br');
                     sp.appendChild(br);
                     setTimeout(function (){
-                        if (!node.classList.contains("x-todo-box")){
-                            node = node.parentNode.previousSibling;
-                        }
-                        node.parentNode.replaceChild(sp, node);
+                        node.replaceChild(sp, node.lastElementChild);
                         setCollapse(sp);
                     });
                 }
@@ -354,8 +354,13 @@ function createHTML(options = {}) {
                     var url = data.url || window.prompt('Enter the link URL');
 
                     if (url) {
+                        let href = url
+                        if (${defaultHttps} && !href.startsWith("http")) {
+                            href = "https://" + href
+                        }
+
                         var el = document.createElement("a");
-                        el.setAttribute("href", url);
+                        el.setAttribute("href", href);
 
                         var title = data.title || sel.toString() || url;
                         el.text = title;
@@ -396,6 +401,8 @@ function createHTML(options = {}) {
                 result: function(url, style) {
                     if (url){
                         exec('insertHTML', "<img style='"+ (style || '')+"' src='"+ url +"'/>");
+                        // This is needed, or the image will not be inserted if the html is empty
+                        exec('insertHTML', "<br/>");
                         Actions.UPDATE_HEIGHT();
                     }
                 }
@@ -432,11 +439,12 @@ function createHTML(options = {}) {
                     if (anchorNode === editor.content || queryCommandValue(formatBlock) === ''){
                         formatParagraph();
                     }
+
                     var box = checkboxNode(anchorNode);
                     if (!!box){
                         cancelCheckboxList(box.parentNode);
                     } else {
-                        !queryCommandState('insertOrderedList') && execCheckboxList(pNode);
+                        !queryCommandState('insertOrderedList') && execCheckboxList(anchorNode);
                     }
                 }
             },
@@ -521,7 +529,7 @@ function createHTML(options = {}) {
             var content = settings.element.content = createElement('div');
             content.id = 'content';
             content.contentEditable = true;
-            content.spellcheck = false;
+            content.spellcheck = ${spellcheck};
             content.autofocus = ${initialFocus};
             content.enterKeyHint = '${enterKeyHint}';
             content.autocapitalize = '${autoCapitalize}';
@@ -531,7 +539,7 @@ function createHTML(options = {}) {
             content.oninput = function (_ref) {
                 // var firstChild = _ref.target.firstChild;
                 if ((anchorNode === void 0 || anchorNode === content) && queryCommandValue(formatBlock) === ''){
-                    if ( !compositionStatus ){
+                    if ( !compositionStatus || anchorNode === content){
                         formatParagraph(true);
                         paragraphStatus = 0;
                     } else {
@@ -563,7 +571,7 @@ function createHTML(options = {}) {
             function handler() {
                 var activeTools = [];
                 for(var k in actionsHandler){
-                    const state =  Actions[k].state() 
+                    const state =  Actions[k].state()
                     if ( state ){
                         activeTools.push(typeof state === "boolean" ? k : {type: k, value: Actions[k].state()});
                     }
@@ -672,11 +680,15 @@ function createHTML(options = {}) {
                 }
             });
             addEventListener(content, 'compositionstart', function(event){
-                compositionStatus = 1;
+                if(${useCharacter}){
+                    compositionStatus = 1;
+                }
             })
             addEventListener(content, 'compositionend', function (event){
-                compositionStatus = 0;
-                paragraphStatus && formatParagraph(true);
+                if(${useCharacter}){
+                    compositionStatus = 0;
+                    paragraphStatus && formatParagraph(true);
+                }
             })
 
             var message = function (event){
@@ -737,4 +749,4 @@ function createHTML(options = {}) {
 }
 
 const HTML = createHTML();
-export {HTML, createHTML, getContentCSS};
+export { HTML, createHTML, getContentCSS };
